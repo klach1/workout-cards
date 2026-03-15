@@ -653,34 +653,45 @@ export default function WorkoutCards() {
           {workoutCards.map((card) => {
             const Icon = card.icon;
             return (
-              <Card key={card.title} className="overflow-hidden rounded-[24px] border-white/60 bg-white/80 shadow-2xl backdrop-blur sm:rounded-[28px]">
-                <CardHeader className="border-b border-slate-200/70 bg-gradient-to-r from-slate-900 to-slate-700 p-4 text-white sm:p-5">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/10 sm:h-11 sm:w-11">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <Badge className="rounded-full bg-white/15 px-3 py-1 text-white hover:bg-white/15">Tréninkový den</Badge>
-                  </div>
-                  <CardTitle className="text-lg leading-tight sm:text-xl">{card.title}</CardTitle>
-                </CardHeader>
+              <details key={card.title} className="group/card" open>
+                <summary className="list-none">
+                  <Card className="overflow-hidden rounded-[24px] border-white/60 bg-white/80 shadow-2xl backdrop-blur sm:rounded-[28px]">
+                    <CardHeader className="cursor-pointer border-b border-slate-200/70 bg-gradient-to-r from-slate-900 to-slate-700 p-4 text-white sm:p-5">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/10 sm:h-11 sm:w-11">
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge className="rounded-full bg-white/15 px-3 py-1 text-white hover:bg-white/15">Tréninkový den</Badge>
+                          <div className="rounded-full bg-white/15 p-2 transition group-open/card:rotate-180">
+                            <ChevronDown className="h-4 w-4" />
+                          </div>
+                        </div>
+                      </div>
+                      <CardTitle className="text-lg leading-tight sm:text-xl">{card.title}</CardTitle>
+                    </CardHeader>
+                  </Card>
+                </summary>
 
-                <CardContent className="space-y-4 p-3 sm:p-5">
-                  <Section title="Warm-up" items={card.warmup} tone="bg-slate-50" accent="slate" />
-                  <Section title="Skill blok" items={[skillExercise]} tone="bg-sky-50" accent="sky" />
-                  <Section title="Síla" items={card.strength} tone="bg-emerald-50" accent="emerald" />
-                  <Section title="Core" items={card.core} tone="bg-amber-50" accent="amber" />
+                <Card className="overflow-hidden rounded-b-[24px] rounded-t-none border-t-0 border-white/60 bg-white/80 shadow-2xl backdrop-blur sm:rounded-b-[28px]">
+                  <CardContent className="space-y-4 p-3 sm:p-5">
+                    <Section title="Warm-up" items={card.warmup} tone="bg-slate-50" accent="slate" />
+                    <Section title="Skill blok" items={[skillExercise]} tone="bg-sky-50" accent="sky" />
+                    <Section title="Síla" items={card.strength} tone="bg-emerald-50" accent="emerald" />
+                    <Section title="Core" items={card.core} tone="bg-amber-50" accent="amber" />
 
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
-                    <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
-                      <Timer className="h-4 w-4" />
-                      Poznámka
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+                      <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                        <Timer className="h-4 w-4" />
+                        Poznámka
+                      </div>
+                      <p className="text-sm leading-relaxed text-slate-600">
+                        Dělej vše čistě technicky. Nejezdi do úplného selhání. Ve skill bloku projížděj progrese od nejlehčí po nejtěžší a zastav se u kroku, který zvládáš čistě.
+                      </p>
                     </div>
-                    <p className="text-sm leading-relaxed text-slate-600">
-                      Dělej vše čistě technicky. Nejezdi do úplného selhání. Ve skill bloku projížděj progrese od nejlehčí po nejtěžší a zastav se u kroku, který zvládáš čistě.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </details>
             );
           })}
         </div>
