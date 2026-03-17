@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dumbbell, Shield, ArrowUp, Activity, Timer, ChevronDown, Target, CheckCircle2, GripVertical } from "lucide-react";
+import { Dumbbell, Shield, ArrowUp, ArrowDown, Activity, ChevronDown, Target, CheckCircle2 } from "lucide-react";
 
 type Progression = {
   title: string;
@@ -444,7 +444,7 @@ type SectionKey = "warmup" | "strength" | "core";
 type CardExerciseOrder = Record<SectionKey, string[]>;
 type ExerciseOrderState = Record<string, CardExerciseOrder>;
 
-const exerciseOrderStorageKey = "workout-cards.exercise-order.v1";
+const exerciseOrderStorageKey = "workout-cards.exercise-order.v2";
 const reorderableSections: SectionKey[] = ["warmup", "strength", "core"];
 
 function buildExerciseId(cardId: string, section: SectionKey, index: number) {
@@ -505,22 +505,11 @@ function loadExerciseOrder(): ExerciseOrderState {
   }
 }
 
-function moveItem<T>(items: T[], fromIndex: number, toIndex: number) {
-  if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) {
-    return items;
-  }
-
-  const next = [...items];
-  const [moved] = next.splice(fromIndex, 1);
-  next.splice(toIndex, 0, moved);
-  return next;
-}
-
 function ProgressionItem({ step }: { step: Progression }) {
   return (
     <details className="group rounded-xl border border-sky-200 bg-white/80 shadow-sm transition open:bg-white">
       <summary className="flex cursor-pointer list-none items-start justify-between gap-3 p-3 sm:p-4">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="text-sm font-semibold text-slate-900">{step.title}</div>
           {step.goal && <div className="mt-1 text-xs text-sky-800 sm:text-sm">{step.goal}</div>}
         </div>
@@ -552,74 +541,26 @@ function ProgressionItem({ step }: { step: Progression }) {
 }
 
 function ExerciseItem({
-  exerciseId,
   exercise,
   accent = "slate",
-  canReorder = true,
-  isDragging = false,
-  isDropTarget = false,
-  onDragStart,
-  onDragEnd,
-  onDragOver,
-  onDrop,
+  moveControls,
 }: {
-  exerciseId: string;
   exercise: Exercise;
   accent?: Accent;
-  canReorder?: boolean;
-  isDragging?: boolean;
-  isDropTarget?: boolean;
-  onDragStart?: (exerciseId: string) => void;
-  onDragEnd?: () => void;
-  onDragOver?: (exerciseId: string) => void;
-  onDrop?: (exerciseId: string) => void;
+  moveControls?: React.ReactNode;
 }) {
   return (
-    <details
-      draggable={canReorder}
-      onDragStart={
-        canReorder
-          ? (event) => {
-              event.dataTransfer.effectAllowed = "move";
-              event.dataTransfer.setData("text/plain", exerciseId);
-              onDragStart?.(exerciseId);
-            }
-          : undefined
-      }
-      onDragEnd={canReorder ? onDragEnd : undefined}
-      onDragOver={
-        canReorder
-          ? (event) => {
-              event.preventDefault();
-              event.dataTransfer.dropEffect = "move";
-              onDragOver?.(exerciseId);
-            }
-          : undefined
-      }
-      onDrop={
-        canReorder
-          ? (event) => {
-              event.preventDefault();
-              onDrop?.(exerciseId);
-            }
-          : undefined
-      }
-      className={`group rounded-2xl border bg-white/80 p-0 shadow-sm transition ${accentClasses[accent]} ${
-        isDragging ? "scale-[0.99] border-slate-300 opacity-60" : "border-slate-200"
-      } ${isDropTarget ? "ring-2 ring-slate-300 ring-offset-2 ring-offset-transparent" : ""}`}
-    >
+    <details className={`group rounded-2xl border border-slate-200 bg-white/80 p-0 shadow-sm transition ${accentClasses[accent]}`}>
       <summary className="flex cursor-pointer list-none items-start justify-between gap-3 p-4 sm:p-5">
-        {canReorder && (
-          <div className="mt-0.5 shrink-0 rounded-xl bg-slate-100 p-2 text-slate-500">
-            <GripVertical className="h-4 w-4" />
-          </div>
-        )}
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="text-sm font-semibold text-slate-900 sm:text-base">{exercise.name}</div>
           <div className="mt-1 text-sm text-slate-600">{exercise.prescription}</div>
         </div>
-        <div className="mt-0.5 shrink-0 rounded-full bg-slate-100 p-2 transition group-open:rotate-180">
-          <ChevronDown className="h-4 w-4 text-slate-600" />
+        <div className="ml-2 flex shrink-0 items-center gap-2">
+          {moveControls}
+          <div className="rounded-full bg-slate-100 p-2 transition group-open:rotate-180">
+            <ChevronDown className="h-4 w-4 text-slate-600" />
+          </div>
         </div>
       </summary>
 
@@ -672,12 +613,8 @@ function Section({
   accent = "slate",
   canReorder = true,
   hint,
-  draggedExerciseId,
-  dragOverExerciseId,
-  onDragStart,
-  onDragEnd,
-  onDragOver,
-  onDrop,
+  onMoveUp,
+  onMoveDown,
 }: {
   title: string;
   items: Array<{ id: string; exercise: Exercise }>;
@@ -685,12 +622,8 @@ function Section({
   accent?: Accent;
   canReorder?: boolean;
   hint?: string;
-  draggedExerciseId?: string | null;
-  dragOverExerciseId?: string | null;
-  onDragStart?: (exerciseId: string) => void;
-  onDragEnd?: () => void;
-  onDragOver?: (exerciseId: string) => void;
-  onDrop?: (exerciseId: string) => void;
+  onMoveUp?: (exerciseId: string) => void;
+  onMoveDown?: (exerciseId: string) => void;
 }) {
   return (
     <div className={`rounded-2xl border border-white/60 ${tone} p-3 shadow-sm sm:p-4`}>
@@ -699,19 +632,35 @@ function Section({
         {hint && <div className="text-right text-xs text-slate-500">{hint}</div>}
       </div>
       <div className="space-y-3">
-        {items.map((item) => (
+        {items.map((item, index) => (
           <ExerciseItem
             key={item.id}
-            exerciseId={item.id}
             exercise={item.exercise}
             accent={accent}
-            canReorder={canReorder}
-            isDragging={draggedExerciseId === item.id}
-            isDropTarget={dragOverExerciseId === item.id && draggedExerciseId !== item.id}
-            onDragStart={onDragStart}
-            onDragEnd={onDragEnd}
-            onDragOver={onDragOver}
-            onDrop={onDrop}
+            moveControls={
+              canReorder ? (
+                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    aria-label="Posunout nahoru"
+                    className="rounded-lg border border-slate-200 bg-white p-2 text-slate-500 shadow-sm transition hover:bg-slate-50 disabled:opacity-40"
+                    onClick={() => onMoveUp?.(item.id)}
+                    disabled={index === 0}
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Posunout dolů"
+                    className="rounded-lg border border-slate-200 bg-white p-2 text-slate-500 shadow-sm transition hover:bg-slate-50 disabled:opacity-40"
+                    onClick={() => onMoveDown?.(item.id)}
+                    disabled={index === items.length - 1}
+                  >
+                    <ArrowDown className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : undefined
+            }
           />
         ))}
       </div>
@@ -786,8 +735,6 @@ function DevChecks() {
 export default function WorkoutCards() {
   const [selectedSkillId, setSelectedSkillId] = useState<string>("lsit");
   const [exerciseOrder, setExerciseOrder] = useState<ExerciseOrderState>(() => loadExerciseOrder());
-  const [dragState, setDragState] = useState<{ cardId: string; section: SectionKey; exerciseId: string } | null>(null);
-  const [dragOverExerciseId, setDragOverExerciseId] = useState<string | null>(null);
 
   const selectedSkill = useMemo(() => {
     return beginnerSkills.find((skill) => skill.id === selectedSkillId) ?? beginnerSkills[0];
@@ -822,27 +769,19 @@ export default function WorkoutCards() {
       .filter((item): item is { id: string; exercise: Exercise } => item !== null);
   };
 
-  const handleDragStart = (cardId: string, section: SectionKey, exerciseId: string) => {
-    setDragState({ cardId, section, exerciseId });
-    setDragOverExerciseId(exerciseId);
-  };
-
-  const handleDragOver = (exerciseId: string) => {
-    setDragOverExerciseId(exerciseId);
-  };
-
-  const handleDrop = (cardId: string, section: SectionKey, targetExerciseId: string) => {
-    if (!dragState || dragState.cardId !== cardId || dragState.section !== section) {
-      return;
-    }
-
+  const moveExercise = (cardId: string, section: SectionKey, exerciseId: string, direction: -1 | 1) => {
     setExerciseOrder((current) => {
       const currentOrder = current[cardId]?.[section] ?? [];
-      const nextOrder = moveItem(currentOrder, currentOrder.indexOf(dragState.exerciseId), currentOrder.indexOf(targetExerciseId));
+      const fromIndex = currentOrder.indexOf(exerciseId);
+      const toIndex = fromIndex + direction;
 
-      if (nextOrder === currentOrder) {
+      if (fromIndex === -1 || toIndex < 0 || toIndex >= currentOrder.length) {
         return current;
       }
+
+      const nextOrder = [...currentOrder];
+      const [moved] = nextOrder.splice(fromIndex, 1);
+      nextOrder.splice(toIndex, 0, moved);
 
       return {
         ...current,
@@ -852,14 +791,6 @@ export default function WorkoutCards() {
         },
       };
     });
-
-    setDragState(null);
-    setDragOverExerciseId(null);
-  };
-
-  const handleDragEnd = () => {
-    setDragState(null);
-    setDragOverExerciseId(null);
   };
 
   return (
@@ -924,13 +855,9 @@ export default function WorkoutCards() {
                       items={warmupItems}
                       tone="bg-slate-50"
                       accent="slate"
-                      hint="Přetáhni cvik za úchop"
-                      draggedExerciseId={dragState?.cardId === card.id && dragState.section === "warmup" ? dragState.exerciseId : null}
-                      dragOverExerciseId={dragState?.cardId === card.id && dragState.section === "warmup" ? dragOverExerciseId : null}
-                      onDragStart={(exerciseId) => handleDragStart(card.id, "warmup", exerciseId)}
-                      onDragEnd={handleDragEnd}
-                      onDragOver={handleDragOver}
-                      onDrop={(exerciseId) => handleDrop(card.id, "warmup", exerciseId)}
+                      hint="Pořadí změníš šipkami"
+                      onMoveUp={(exerciseId) => moveExercise(card.id, "warmup", exerciseId, -1)}
+                      onMoveDown={(exerciseId) => moveExercise(card.id, "warmup", exerciseId, 1)}
                     />
                     <Section
                       title="Skill blok"
@@ -944,37 +871,20 @@ export default function WorkoutCards() {
                       items={strengthItems}
                       tone="bg-emerald-50"
                       accent="emerald"
-                      hint="Přetáhni cvik za úchop"
-                      draggedExerciseId={dragState?.cardId === card.id && dragState.section === "strength" ? dragState.exerciseId : null}
-                      dragOverExerciseId={dragState?.cardId === card.id && dragState.section === "strength" ? dragOverExerciseId : null}
-                      onDragStart={(exerciseId) => handleDragStart(card.id, "strength", exerciseId)}
-                      onDragEnd={handleDragEnd}
-                      onDragOver={handleDragOver}
-                      onDrop={(exerciseId) => handleDrop(card.id, "strength", exerciseId)}
+                      hint="Pořadí změníš šipkami"
+                      onMoveUp={(exerciseId) => moveExercise(card.id, "strength", exerciseId, -1)}
+                      onMoveDown={(exerciseId) => moveExercise(card.id, "strength", exerciseId, 1)}
                     />
                     <Section
                       title="Core"
                       items={coreItems}
                       tone="bg-amber-50"
                       accent="amber"
-                      hint="Přetáhni cvik za úchop"
-                      draggedExerciseId={dragState?.cardId === card.id && dragState.section === "core" ? dragState.exerciseId : null}
-                      dragOverExerciseId={dragState?.cardId === card.id && dragState.section === "core" ? dragOverExerciseId : null}
-                      onDragStart={(exerciseId) => handleDragStart(card.id, "core", exerciseId)}
-                      onDragEnd={handleDragEnd}
-                      onDragOver={handleDragOver}
-                      onDrop={(exerciseId) => handleDrop(card.id, "core", exerciseId)}
+                      hint="Pořadí změníš šipkami"
+                      onMoveUp={(exerciseId) => moveExercise(card.id, "core", exerciseId, -1)}
+                      onMoveDown={(exerciseId) => moveExercise(card.id, "core", exerciseId, 1)}
                     />
 
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
-                      <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
-                        <Timer className="h-4 w-4" />
-                        Poznámka
-                      </div>
-                      <p className="text-sm leading-relaxed text-slate-600">
-                        Dělej vše čistě technicky. Nejezdi do úplného selhání. Ve skill bloku projížděj progrese od nejlehčí po nejtěžší a zastav se u kroku, který zvládáš čistě.
-                      </p>
-                    </div>
                   </CardContent>
                 </Card>
               </details>
