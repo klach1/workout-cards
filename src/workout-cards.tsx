@@ -248,6 +248,12 @@ const workoutCards: WorkoutCard[] = [
         how: "Stoupni si na šířku ramen, špičky lehce ven. Jdi boky dozadu a dolů, jako by sis chtěl sednout na židli. Kolena směřují přibližně ve směru špiček, pak se vrať nahoru.",
         focus: "Legs — nohy a základní mobilita",
       },
+      {
+        name: "Dead hang",
+        prescription: "2× 20–30 s",
+        how: "Pověs se na hrazdu až úplně na konec silové části. Drž pevný úchop, ramena nech dlouhá a zůstaň bez zbytečného houpání.",
+        focus: "Grip finisher — úchop, předloktí a tolerance visu",
+      },
     ],
     core: [
       {
@@ -325,6 +331,12 @@ const workoutCards: WorkoutCard[] = [
         how: "Ze stoje udělej jednou nohou krok dozadu a jdi kolenem dolů. Přední chodidlo drž celé na zemi, potom se odraz zpět do stoje. Střídej nohy.",
         focus: "Legs — nohy a stabilita",
       },
+      {
+        name: "Dead hang",
+        prescription: "2× 20–30 s",
+        how: "Pověs se na hrazdu až úplně na konec silové části. Drž pevný úchop a dýchej klidně, bez zbytečného houpání.",
+        focus: "Grip finisher — úchop, předloktí a tolerance visu",
+      },
     ],
     core: [
       {
@@ -401,6 +413,12 @@ const workoutCards: WorkoutCard[] = [
         prescription: "3× 12–15",
         how: "Lehni si na záda, chodidla dej blíž k zadku. Zatlač paty do země, zvedni pánev nahoru a nahoře zatni hýždě. Potom se pomalu vrať dolů.",
         focus: "Legs — hýždě a zadní řetězec",
+      },
+      {
+        name: "Dead hang",
+        prescription: "2× 20–30 s",
+        how: "Pověs se na hrazdu až úplně na konec silové části. Sevři hrazdu pevně a drž tělo bez zbytečného houpání.",
+        focus: "Grip finisher — úchop, předloktí a opora ve visu",
       },
     ],
     core: [
