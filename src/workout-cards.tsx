@@ -193,10 +193,10 @@ const workoutCards: WorkoutCard[] = [
         focus: "Ramena a prokrvení horní části těla",
       },
       {
-        name: "Dead hang",
-        prescription: "2× 20–30 s",
-        how: "Pověs se na hrazdu do klidného visu, ramena nech dlouhá a úchop pevný. Když je to těžké, lehce si pomáhej špičkami o zem nebo zkrať čas.",
-        focus: "Úchop, předloktí a základní tolerance visu",
+        name: "Kroužení zápěstí",
+        prescription: "20 s",
+        how: "Sepni dlaně nebo natáhni ruce před sebe a krouž zápěstím na obě strany. Pohyb dělej plynule bez bolesti.",
+        focus: "Příprava zápěstí na oporu o zem",
       },
       {
         name: "Panák",
@@ -225,10 +225,10 @@ const workoutCards: WorkoutCard[] = [
         focus: "Pull 1 — záda, bicepsy, síla tahu",
       },
       {
-        name: "Biceps curls s batohem nebo gumou",
-        prescription: "3× 10–15",
-        how: "Vezmi batoh nebo odporovou gumu, lokty drž u těla a bez houpání přitahuj dlaně směrem k ramenům. Nahoře krátce zatni biceps a potom spouštěj pomalu dolů.",
-        focus: "Biceps — přímá práce pro loketní flexory",
+        name: "Chin-up hold (podhmat)",
+        prescription: "3× 10–20 s",
+        how: "Vyskoč nebo se vytáhni do horní pozice podhmatového shybu a zkus chvíli držet bradu nad hrazdou. Ramena drž stažená dolů a nehoupej se.",
+        focus: "Biceps — síla v horní pozici tahu",
       },
       {
         name: "Kliky",
@@ -270,10 +270,10 @@ const workoutCards: WorkoutCard[] = [
         focus: "Příprava ramen na tah i tlak",
       },
       {
-        name: "Dead hang",
-        prescription: "2× 20–30 s",
-        how: "Pověs se na hrazdu do klidného visu, drž pevný úchop a dýchej klidně. Když je to potřeba, nech špičky lehce na zemi nebo zkrať interval.",
-        focus: "Úchop, předloktí a tolerance visu",
+        name: "Zápěstí",
+        prescription: "20 s",
+        how: "Promni a rozhýbej zápěstí kroužením a jemným přenášením váhy přes dlaně. Nic netlač přes bolest.",
+        focus: "Zahřátí pro oporu o ruce",
       },
       {
         name: "Úklony do stran",
@@ -314,10 +314,10 @@ const workoutCards: WorkoutCard[] = [
         focus: "Pull 1 — lehčí tahový objem",
       },
       {
-        name: "Biceps curls s batohem nebo gumou",
-        prescription: "3× 10–15",
-        how: "Vezmi batoh nebo odporovou gumu, lokty drž u těla a bez švihu přitahuj dlaně směrem k ramenům. Nahoře krátce zatni biceps a potom se vrať pomalu dolů.",
-        focus: "Biceps — přímá práce pro loketní flexory",
+        name: "Negativní chin-ups (podhmat)",
+        prescription: "3× 3–5",
+        how: "Vyskoč do horní pozice podhmatového shybu a potom se spouštěj co nejpomaleji dolů. Každé opakování dělej čistě bez houpání.",
+        focus: "Biceps — kontrola excentrické fáze tahu",
       },
       {
         name: "Výpady dozadu",
@@ -353,10 +353,10 @@ const workoutCards: WorkoutCard[] = [
         focus: "Ramena",
       },
       {
-        name: "Dead hang",
-        prescription: "2× 20–30 s",
-        how: "Pověs se na hrazdu do klidného visu, sevři hrazdu pevně a drž tělo bez zbytečného houpání. Když je potřeba, lehce si pomáhej nohama o zem.",
-        focus: "Úchop, předloktí a opora ve visu",
+        name: "Kroužení zápěstí",
+        prescription: "20 s",
+        how: "Rozhýbej zápěstí na obě strany, případně jemně přenes váhu přes dlaně na zemi.",
+        focus: "Zápěstí",
       },
       {
         name: "Cat-cow",
@@ -379,10 +379,10 @@ const workoutCards: WorkoutCard[] = [
         focus: "Pull 1 — tahová síla horní části těla",
       },
       {
-        name: "Biceps curls s batohem nebo gumou",
-        prescription: "3× 10–15",
-        how: "Vezmi batoh nebo odporovou gumu, lokty drž u těla a plynule přitahuj dlaně směrem k ramenům. Bez švihu nahoře zatni biceps a dolů se vracej kontrolovaně.",
-        focus: "Biceps — přímá práce pro loketní flexory",
+        name: "Chin-ups podhmatem",
+        prescription: "3× 4–6",
+        how: "Chyť hrazdu podhmatem na šířku ramen, zpevni střed těla a vytáhni se nahoru bez švihu. Když nedáš plný rozsah, udělej jen tolik čistých opakování, kolik zvládneš.",
+        focus: "Biceps — tah v podhmatu s větším důrazem na paže",
       },
       {
         name: "Kliky",
