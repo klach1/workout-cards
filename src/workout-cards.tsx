@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dumbbell, Shield, ArrowUp, Activity, Timer, ChevronDown, Target, CheckCircle2 } from "lucide-react";
+import { Dumbbell, Shield, ArrowUp, Activity, Timer, ChevronDown, Target, CheckCircle2, GripVertical } from "lucide-react";
 
 type Progression = {
   title: string;
@@ -31,6 +31,7 @@ type SkillDefinition = {
 };
 
 type WorkoutCard = {
+  id: string;
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   warmup: Exercise[];
@@ -181,6 +182,7 @@ const beginnerSkills: SkillDefinition[] = [
 
 const workoutCards: WorkoutCard[] = [
   {
+    id: "card-1",
     title: "CARD 1 — Den A",
     icon: ArrowUp,
     warmup: [
@@ -257,6 +259,7 @@ const workoutCards: WorkoutCard[] = [
     ],
   },
   {
+    id: "card-2",
     title: "CARD 2 — Den B",
     icon: Shield,
     warmup: [
@@ -333,6 +336,7 @@ const workoutCards: WorkoutCard[] = [
     ],
   },
   {
+    id: "card-3",
     title: "CARD 3 — Den C",
     icon: Dumbbell,
     warmup: [
@@ -418,6 +422,81 @@ const accentClasses = {
 } as const;
 
 type Accent = keyof typeof accentClasses;
+type SectionKey = "warmup" | "strength" | "core";
+type CardExerciseOrder = Record<SectionKey, string[]>;
+type ExerciseOrderState = Record<string, CardExerciseOrder>;
+
+const exerciseOrderStorageKey = "workout-cards.exercise-order.v1";
+const reorderableSections: SectionKey[] = ["warmup", "strength", "core"];
+
+function buildExerciseId(cardId: string, section: SectionKey, index: number) {
+  return `${cardId}:${section}:${index}`;
+}
+
+function getDefaultExerciseOrder(): ExerciseOrderState {
+  return workoutCards.reduce<ExerciseOrderState>((acc, card) => {
+    acc[card.id] = {
+      warmup: card.warmup.map((_, index) => buildExerciseId(card.id, "warmup", index)),
+      strength: card.strength.map((_, index) => buildExerciseId(card.id, "strength", index)),
+      core: card.core.map((_, index) => buildExerciseId(card.id, "core", index)),
+    };
+    return acc;
+  }, {});
+}
+
+function normalizeExerciseOrder(input: unknown): ExerciseOrderState {
+  const defaultOrder = getDefaultExerciseOrder();
+
+  if (!input || typeof input !== "object") {
+    return defaultOrder;
+  }
+
+  const value = input as Record<string, Partial<Record<SectionKey, unknown>>>;
+
+  for (const card of workoutCards) {
+    for (const section of reorderableSections) {
+      const fallback = defaultOrder[card.id][section];
+      const candidate = value[card.id]?.[section];
+
+      if (!Array.isArray(candidate)) {
+        continue;
+      }
+
+      const cleaned = candidate.filter((item): item is string => typeof item === "string");
+      const validIds = new Set(fallback);
+      const dedupedValid = cleaned.filter((id, index) => validIds.has(id) && cleaned.indexOf(id) === index);
+      const missing = fallback.filter((id) => !dedupedValid.includes(id));
+
+      defaultOrder[card.id][section] = [...dedupedValid, ...missing];
+    }
+  }
+
+  return defaultOrder;
+}
+
+function loadExerciseOrder(): ExerciseOrderState {
+  if (typeof window === "undefined") {
+    return getDefaultExerciseOrder();
+  }
+
+  try {
+    const raw = window.localStorage.getItem(exerciseOrderStorageKey);
+    return raw ? normalizeExerciseOrder(JSON.parse(raw)) : getDefaultExerciseOrder();
+  } catch {
+    return getDefaultExerciseOrder();
+  }
+}
+
+function moveItem<T>(items: T[], fromIndex: number, toIndex: number) {
+  if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) {
+    return items;
+  }
+
+  const next = [...items];
+  const [moved] = next.splice(fromIndex, 1);
+  next.splice(toIndex, 0, moved);
+  return next;
+}
 
 function ProgressionItem({ step }: { step: Progression }) {
   return (
@@ -455,15 +534,68 @@ function ProgressionItem({ step }: { step: Progression }) {
 }
 
 function ExerciseItem({
+  exerciseId,
   exercise,
   accent = "slate",
+  canReorder = true,
+  isDragging = false,
+  isDropTarget = false,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop,
 }: {
+  exerciseId: string;
   exercise: Exercise;
   accent?: Accent;
+  canReorder?: boolean;
+  isDragging?: boolean;
+  isDropTarget?: boolean;
+  onDragStart?: (exerciseId: string) => void;
+  onDragEnd?: () => void;
+  onDragOver?: (exerciseId: string) => void;
+  onDrop?: (exerciseId: string) => void;
 }) {
   return (
-    <details className={`group rounded-2xl border border-slate-200 bg-white/80 p-0 shadow-sm transition ${accentClasses[accent]}`}>
+    <details
+      draggable={canReorder}
+      onDragStart={
+        canReorder
+          ? (event) => {
+              event.dataTransfer.effectAllowed = "move";
+              event.dataTransfer.setData("text/plain", exerciseId);
+              onDragStart?.(exerciseId);
+            }
+          : undefined
+      }
+      onDragEnd={canReorder ? onDragEnd : undefined}
+      onDragOver={
+        canReorder
+          ? (event) => {
+              event.preventDefault();
+              event.dataTransfer.dropEffect = "move";
+              onDragOver?.(exerciseId);
+            }
+          : undefined
+      }
+      onDrop={
+        canReorder
+          ? (event) => {
+              event.preventDefault();
+              onDrop?.(exerciseId);
+            }
+          : undefined
+      }
+      className={`group rounded-2xl border bg-white/80 p-0 shadow-sm transition ${accentClasses[accent]} ${
+        isDragging ? "scale-[0.99] border-slate-300 opacity-60" : "border-slate-200"
+      } ${isDropTarget ? "ring-2 ring-slate-300 ring-offset-2 ring-offset-transparent" : ""}`}
+    >
       <summary className="flex cursor-pointer list-none items-start justify-between gap-3 p-4 sm:p-5">
+        {canReorder && (
+          <div className="mt-0.5 shrink-0 rounded-xl bg-slate-100 p-2 text-slate-500">
+            <GripVertical className="h-4 w-4" />
+          </div>
+        )}
         <div className="min-w-0">
           <div className="text-sm font-semibold text-slate-900 sm:text-base">{exercise.name}</div>
           <div className="mt-1 text-sm text-slate-600">{exercise.prescription}</div>
@@ -520,18 +652,49 @@ function Section({
   items,
   tone = "bg-white/70",
   accent = "slate",
+  canReorder = true,
+  hint,
+  draggedExerciseId,
+  dragOverExerciseId,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop,
 }: {
   title: string;
-  items: Exercise[];
+  items: Array<{ id: string; exercise: Exercise }>;
   tone?: string;
   accent?: Accent;
+  canReorder?: boolean;
+  hint?: string;
+  draggedExerciseId?: string | null;
+  dragOverExerciseId?: string | null;
+  onDragStart?: (exerciseId: string) => void;
+  onDragEnd?: () => void;
+  onDragOver?: (exerciseId: string) => void;
+  onDrop?: (exerciseId: string) => void;
 }) {
   return (
     <div className={`rounded-2xl border border-white/60 ${tone} p-3 shadow-sm sm:p-4`}>
-      <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-600">{title}</h3>
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-600">{title}</h3>
+        {hint && <div className="text-right text-xs text-slate-500">{hint}</div>}
+      </div>
       <div className="space-y-3">
         {items.map((item) => (
-          <ExerciseItem key={`${title}-${item.name}-${item.prescription}`} exercise={item} accent={accent} />
+          <ExerciseItem
+            key={item.id}
+            exerciseId={item.id}
+            exercise={item.exercise}
+            accent={accent}
+            canReorder={canReorder}
+            isDragging={draggedExerciseId === item.id}
+            isDropTarget={dragOverExerciseId === item.id && draggedExerciseId !== item.id}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            onDragOver={onDragOver}
+            onDrop={onDrop}
+          />
         ))}
       </div>
     </div>
@@ -604,6 +767,9 @@ function DevChecks() {
 
 export default function WorkoutCards() {
   const [selectedSkillId, setSelectedSkillId] = useState<string>("lsit");
+  const [exerciseOrder, setExerciseOrder] = useState<ExerciseOrderState>(() => loadExerciseOrder());
+  const [dragState, setDragState] = useState<{ cardId: string; section: SectionKey; exerciseId: string } | null>(null);
+  const [dragOverExerciseId, setDragOverExerciseId] = useState<string | null>(null);
 
   const selectedSkill = useMemo(() => {
     return beginnerSkills.find((skill) => skill.id === selectedSkillId) ?? beginnerSkills[0];
@@ -620,6 +786,63 @@ export default function WorkoutCards() {
     }),
     [selectedSkill]
   );
+
+  useEffect(() => {
+    window.localStorage.setItem(exerciseOrderStorageKey, JSON.stringify(exerciseOrder));
+  }, [exerciseOrder]);
+
+  const getOrderedExercises = (card: WorkoutCard, section: SectionKey) => {
+    const source = card[section];
+    const sectionOrder = exerciseOrder[card.id]?.[section] ?? [];
+    const byId = new Map(source.map((exercise, index) => [buildExerciseId(card.id, section, index), exercise]));
+
+    return sectionOrder
+      .map((exerciseId) => {
+        const exercise = byId.get(exerciseId);
+        return exercise ? { id: exerciseId, exercise } : null;
+      })
+      .filter((item): item is { id: string; exercise: Exercise } => item !== null);
+  };
+
+  const handleDragStart = (cardId: string, section: SectionKey, exerciseId: string) => {
+    setDragState({ cardId, section, exerciseId });
+    setDragOverExerciseId(exerciseId);
+  };
+
+  const handleDragOver = (exerciseId: string) => {
+    setDragOverExerciseId(exerciseId);
+  };
+
+  const handleDrop = (cardId: string, section: SectionKey, targetExerciseId: string) => {
+    if (!dragState || dragState.cardId !== cardId || dragState.section !== section) {
+      return;
+    }
+
+    setExerciseOrder((current) => {
+      const currentOrder = current[cardId]?.[section] ?? [];
+      const nextOrder = moveItem(currentOrder, currentOrder.indexOf(dragState.exerciseId), currentOrder.indexOf(targetExerciseId));
+
+      if (nextOrder === currentOrder) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [cardId]: {
+          ...current[cardId],
+          [section]: nextOrder,
+        },
+      };
+    });
+
+    setDragState(null);
+    setDragOverExerciseId(null);
+  };
+
+  const handleDragEnd = () => {
+    setDragState(null);
+    setDragOverExerciseId(null);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-zinc-50 to-slate-200 p-3 sm:p-4 md:p-8 lg:p-10">
@@ -652,6 +875,9 @@ export default function WorkoutCards() {
         <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
           {workoutCards.map((card) => {
             const Icon = card.icon;
+            const warmupItems = getOrderedExercises(card, "warmup");
+            const strengthItems = getOrderedExercises(card, "strength");
+            const coreItems = getOrderedExercises(card, "core");
             return (
               <details key={card.title} className="group/card" open>
                 <summary className="list-none">
@@ -675,10 +901,52 @@ export default function WorkoutCards() {
 
                 <Card className="overflow-hidden rounded-b-[24px] rounded-t-none border-t-0 border-white/60 bg-white/80 shadow-2xl backdrop-blur sm:rounded-b-[28px]">
                   <CardContent className="space-y-4 p-3 sm:p-5">
-                    <Section title="Warm-up" items={card.warmup} tone="bg-slate-50" accent="slate" />
-                    <Section title="Skill blok" items={[skillExercise]} tone="bg-sky-50" accent="sky" />
-                    <Section title="Síla" items={card.strength} tone="bg-emerald-50" accent="emerald" />
-                    <Section title="Core" items={card.core} tone="bg-amber-50" accent="amber" />
+            <Section
+                      title="Warm-up"
+                      items={warmupItems}
+                      tone="bg-slate-50"
+                      accent="slate"
+                      hint="Přetáhni cvik za úchop"
+                      draggedExerciseId={dragState?.cardId === card.id && dragState.section === "warmup" ? dragState.exerciseId : null}
+                      dragOverExerciseId={dragState?.cardId === card.id && dragState.section === "warmup" ? dragOverExerciseId : null}
+                      onDragStart={(exerciseId) => handleDragStart(card.id, "warmup", exerciseId)}
+                      onDragEnd={handleDragEnd}
+                      onDragOver={handleDragOver}
+                      onDrop={(exerciseId) => handleDrop(card.id, "warmup", exerciseId)}
+                    />
+                    <Section
+                      title="Skill blok"
+                      items={[{ id: `skill-${card.id}-${selectedSkill.id}`, exercise: skillExercise }]}
+                      tone="bg-sky-50"
+                      accent="sky"
+                      canReorder={false}
+                    />
+                    <Section
+                      title="Síla"
+                      items={strengthItems}
+                      tone="bg-emerald-50"
+                      accent="emerald"
+                      hint="Přetáhni cvik za úchop"
+                      draggedExerciseId={dragState?.cardId === card.id && dragState.section === "strength" ? dragState.exerciseId : null}
+                      dragOverExerciseId={dragState?.cardId === card.id && dragState.section === "strength" ? dragOverExerciseId : null}
+                      onDragStart={(exerciseId) => handleDragStart(card.id, "strength", exerciseId)}
+                      onDragEnd={handleDragEnd}
+                      onDragOver={handleDragOver}
+                      onDrop={(exerciseId) => handleDrop(card.id, "strength", exerciseId)}
+                    />
+                    <Section
+                      title="Core"
+                      items={coreItems}
+                      tone="bg-amber-50"
+                      accent="amber"
+                      hint="Přetáhni cvik za úchop"
+                      draggedExerciseId={dragState?.cardId === card.id && dragState.section === "core" ? dragState.exerciseId : null}
+                      dragOverExerciseId={dragState?.cardId === card.id && dragState.section === "core" ? dragOverExerciseId : null}
+                      onDragStart={(exerciseId) => handleDragStart(card.id, "core", exerciseId)}
+                      onDragEnd={handleDragEnd}
+                      onDragOver={handleDragOver}
+                      onDrop={(exerciseId) => handleDrop(card.id, "core", exerciseId)}
+                    />
 
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
                       <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
